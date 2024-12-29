@@ -19,13 +19,28 @@ const BookManagement = () => {
       return;
     }
     
-    const storedUserInfo = localStorage.getItem('userInfo');
-    if (storedUserInfo) {
-      setUserInfo(JSON.parse(storedUserInfo));
+    try {
+      const storedUserInfo = localStorage.getItem('userInfo');
+      if (storedUserInfo) {
+        const parsedUserInfo = JSON.parse(storedUserInfo);
+        if (parsedUserInfo && typeof parsedUserInfo === 'object') {
+          setUserInfo(parsedUserInfo);
+        } else {
+          localStorage.removeItem('userInfo');
+          localStorage.removeItem('token');
+          navigate('/login');
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing user info:', error);
+      localStorage.removeItem('userInfo');
+      localStorage.removeItem('token');
+      navigate('/login');
+      return;
     }
     
     fetchBooks();
-  }, []);
+  }, [navigate]);
 
   const fetchBooks = async () => {
     try {
@@ -33,9 +48,15 @@ const BookManagement = () => {
       const response = await axios.get('http://localhost:8080/book/list', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setBooks(response.data);
+      setBooks(response.data || []);
     } catch (error) {
       console.error('Error fetching books:', error);
+      setBooks([]);
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userInfo');
+        navigate('/login');
+      }
     }
   };
 

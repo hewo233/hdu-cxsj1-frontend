@@ -14,13 +14,33 @@ const Login = () => {
     e.preventDefault();
     try {
       const response = await axios.post('http://localhost:8080/auth/login', formData);
-      if (response.data.token) {
+      console.log('Login response:', response);
+
+      if (response.data && response.data.token) {
         localStorage.setItem('token', response.data.token);
-        localStorage.setItem('userInfo', JSON.stringify(response.data.user));
+        
+        if (response.data.user) {
+          localStorage.setItem('userInfo', JSON.stringify(response.data.user));
+        } 
+        else {
+          const userInfo = {
+            id: response.data.id,
+            name: response.data.name,
+            email: response.data.email,
+            gender: response.data.gender
+          };
+          localStorage.setItem('userInfo', JSON.stringify(userInfo));
+        }
+
+        console.log('Navigating to /books...');
         navigate('/books');
+      } else {
+        setError('登录失败：服务器响应格式不正确');
+        console.error('Invalid response format:', response.data);
       }
     } catch (err) {
-      setError('登录失败，请检查用户名和密码');
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || '登录失败，请检查用户名和密码');
     }
   };
 
