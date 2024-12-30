@@ -151,14 +151,10 @@ const BookManagement = () => {
       const response = await axiosInstance.get(`/user/${userId}`);
       console.log('Fetched user info:', response);
       
-      // 从 response.user 中获取用户信息
       if (response && response.user) {
+        // 将整个响应存储，保持数据结构一致
         const userData = {
-          ...response.user,
-          // 使用后端返回的字段名
-          uid: response.user.uid,
-          name: response.user.name,
-          gender: response.user.gender
+          user: response.user // 保持嵌套结构
         };
         localStorage.setItem('userInfo', JSON.stringify(userData));
         setUserInfo(userData);
@@ -171,8 +167,7 @@ const BookManagement = () => {
   // 修改用户信息更新的处理函数
   const handleUserUpdate = async (updatedUser) => {
     try {
-      // 直接使用 uid
-      const userId = updatedUser.uid;
+      const userId = updatedUser.user.uid;
       console.log('Updating user with ID:', userId);
       if (!userId) {
         throw new Error('User ID not found');
@@ -193,10 +188,10 @@ const BookManagement = () => {
               onClick={() => setShowUserModal(true)}
               className="text-blue-600 hover:text-blue-800"
             >
-              {userInfo?.name || userInfo?.Name || '用户'}
+              {userInfo?.user?.name || '用户'}
             </button>
             <span className="text-gray-600">
-              {userInfo?.gender || userInfo?.Gender || ''}
+              {userInfo?.user?.gender || ''}
             </span>
           </div>
         </div>

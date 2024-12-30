@@ -5,8 +5,8 @@ const UserEditModal = ({ user, onClose, onUpdate }) => {
   console.log('User data in modal:', user);
 
   const [formData, setFormData] = useState({
-    name: user.name || '',
-    gender: user.gender || '',
+    name: user.user.name || '',
+    gender: user.user.gender || '',
     password: ''
   });
 
