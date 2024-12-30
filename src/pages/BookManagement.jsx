@@ -29,8 +29,18 @@ const BookManagement = () => {
       const storedUserInfo = localStorage.getItem('userInfo');
       if (storedUserInfo) {
         const parsedUserInfo = JSON.parse(storedUserInfo);
-        console.log('Stored user info:', parsedUserInfo); // 添加调试日志
-        setUserInfo(parsedUserInfo);
+        // 确保用户信息的结构正确
+        if (parsedUserInfo.user) {
+          setUserInfo(parsedUserInfo);
+        } else {
+          // 如果数据结构不正确，重新获取用户信息
+          const userId = parsedUserInfo.uid || parsedUserInfo.id;
+          if (userId) {
+            fetchUserInfo(userId);
+          } else {
+            throw new Error('Invalid user info structure');
+          }
+        }
       } else {
         // 如果没有用户信息，重新登录
         localStorage.removeItem('token');
@@ -193,21 +203,30 @@ const BookManagement = () => {
         <div className="max-w-7xl mx-auto px-4 py-6 flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">图书管理系统</h1>
           <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setShowUserModal(true)}
-              className="text-blue-600 hover:text-blue-800"
-            >
-              {userInfo?.user?.name || '用户'}
-            </button>
-            <span className="text-gray-600">
-              {userInfo?.user?.gender || ''}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="text-red-600 hover:text-red-800"
-            >
-              注销
-            </button>
+            <div className="flex items-center space-x-2 px-4 py-2 bg-gray-50 rounded-lg">
+              <div className="flex flex-col">
+                <button
+                  onClick={() => setShowUserModal(true)}
+                  className="text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  {userInfo?.user?.name || '未登录用户'}
+                </button>
+                <div className="text-sm text-gray-500">
+                  {userInfo?.user?.email || ''}
+                </div>
+              </div>
+              <span className="text-gray-400">|</span>
+              <div className="text-gray-600">
+                {userInfo?.user?.gender === 'male' ? '男' : 
+                 userInfo?.user?.gender === 'female' ? '女' : ''}
+              </div>
+              <button
+                onClick={handleLogout}
+                className="ml-4 text-red-600 hover:text-red-800 text-sm font-medium"
+              >
+                注销
+              </button>
+            </div>
           </div>
         </div>
       </header>
