@@ -1,24 +1,22 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 
 const UserEditModal = ({ user, onClose, onUpdate }) => {
   const [formData, setFormData] = useState({
-    name: user.name,
-    password: '',
-    gender: user.gender
+    name: user.name || '',
+    gender: user.gender || '',
+    email: user.email || ''
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.put(
-        `http://localhost:8080/user/${user.id}`,
-        formData,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
+      const userId = user.id || user.ID || user.uid;
+      if (!userId) {
+        throw new Error('User ID not found');
+      }
+
+      const response = await axiosInstance.put(`/user/${userId}`, formData);
       
       if (response.data) {
         const updatedUser = { ...user, ...formData };
@@ -28,6 +26,7 @@ const UserEditModal = ({ user, onClose, onUpdate }) => {
       }
     } catch (error) {
       console.error('Error updating user:', error);
+      alert('更新失败：' + (error.response?.data?.message || '未知错误'));
     }
   };
 

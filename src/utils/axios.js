@@ -9,9 +9,9 @@ instance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers['Authorization'] = token;
+      // 检查 token 是否已经包含 'Bearer'
+      config.headers['Authorization'] = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
     }
-    console.log('Request config:', config); // 调试日志
     return config;
   },
   (error) => {
