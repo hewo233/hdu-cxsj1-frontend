@@ -3,6 +3,8 @@ import axiosInstance from '../utils/axios';
 import { useNavigate } from 'react-router-dom';
 import UserEditModal from '../components/UserEditModal';
 
+const COVER_BASE_URL = 'http://localhost:8080/static/covers/';
+
 const BookManagement = () => {
   const [books, setBooks] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -44,14 +46,32 @@ const BookManagement = () => {
   const fetchBooks = async () => {
     try {
       const response = await axiosInstance.get('/book/list');
-      setBooks(Array.isArray(response.data) ? response.data : []);
+      console.log('Books data:', response); // 调试日志
+      console.log('Raw response:', response);
+      
+      // 确保 response 是数组或者从 response 中获取正确的数组字段
+      const booksData = Array.isArray(response) ? response : response.books || [];
+      setBooks(booksData);
     } catch (error) {
       console.error('Error fetching books:', error);
       setBooks([]);
-      if (error.response && error.response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('userInfo');
-        navigate('/login');
+      
+      // 处理不同类型的错误
+      if (error.response) {
+        if (error.response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userInfo');
+          navigate('/login');
+        } else {
+          // 处理其他错误状态码
+          console.error('Server error:', error.response.data);
+        }
+      } else if (error.request) {
+        // 请求发出但没有收到响应
+        console.error('No response received:', error.request);
+      } else {
+        // 请求配置出错
+        console.error('Request config error:', error.message);
       }
     }
   };
@@ -130,7 +150,11 @@ const BookManagement = () => {
                 {currentBooks.map((book) => (
                   <tr key={book.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <img src={book.cover} alt={book.name} className="h-20 w-16 object-cover"/>
+                      <img 
+                        src={`${COVER_BASE_URL}${book.cover_file.split('/').pop()}`}
+                        alt={book.name} 
+                        className="h-20 w-16 object-cover rounded shadow"
+                      />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">{book.id}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{book.name}</td>

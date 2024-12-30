@@ -25,7 +25,7 @@ instance.interceptors.response.use(
     console.log('Response:', response); // 调试日志
     
     // 检查响应状态
-    if (response.data.errno !== 20000) { // 假设 20000 是成功状态码
+    if (response.data.errno !== 20000) {
       return Promise.reject({
         response: {
           status: response.data.errno,
@@ -34,10 +34,11 @@ instance.interceptors.response.use(
       });
     }
     
-    return response.data;
+    // 返回实际的数据部分
+    return response.data.data || response.data;
   },
   (error) => {
-    console.error('Response error:', error); // 调试日志
+    console.error('Response error:', error);
     return Promise.reject(error);
   }
 );
