@@ -5,15 +5,15 @@ const UserEditModal = ({ user, onClose, onUpdate }) => {
   console.log('User data in modal:', user);
 
   const [formData, setFormData] = useState({
-    name: user.user.name || '',
-    gender: user.user.gender || '',
+    name: user.name || '',
+    gender: user.gender || '',
     password: ''
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const userId = user.user.uid;
+      const userId = user.uid;
       console.log('User ID:', userId);
       
       if (!userId) {

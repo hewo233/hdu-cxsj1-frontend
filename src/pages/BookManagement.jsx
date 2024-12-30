@@ -167,7 +167,7 @@ const BookManagement = () => {
   // 修改用户信息更新的处理函数
   const handleUserUpdate = async (updatedUser) => {
     try {
-      const userId = updatedUser.user.uid;
+      const userId = updatedUser.user?.uid;
       console.log('Updating user with ID:', userId);
       if (!userId) {
         throw new Error('User ID not found');
@@ -175,6 +175,15 @@ const BookManagement = () => {
       await fetchUserInfo(userId);
     } catch (error) {
       console.error('Error updating user info:', error);
+    }
+  };
+
+  // 添加注销处理函数
+  const handleLogout = () => {
+    if (window.confirm('确定要注销吗？')) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userInfo');
+      navigate('/login');
     }
   };
 
@@ -193,6 +202,12 @@ const BookManagement = () => {
             <span className="text-gray-600">
               {userInfo?.user?.gender || ''}
             </span>
+            <button
+              onClick={handleLogout}
+              className="text-red-600 hover:text-red-800"
+            >
+              注销
+            </button>
           </div>
         </div>
       </header>
