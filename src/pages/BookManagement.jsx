@@ -29,6 +29,7 @@ const BookManagement = () => {
       const storedUserInfo = localStorage.getItem('userInfo');
       if (storedUserInfo) {
         const parsedUserInfo = JSON.parse(storedUserInfo);
+        console.log('Stored user info:', parsedUserInfo); // 添加调试日志
         setUserInfo(parsedUserInfo);
       } else {
         // 如果没有用户信息，重新登录
@@ -144,6 +145,44 @@ const BookManagement = () => {
     setSelectedBooks(new Set([bookId]));
   };
 
+  // 添加获取用户信息的函数
+  const fetchUserInfo = async (userId) => {
+    try {
+      const response = await axiosInstance.get(`/user/${userId}`);
+      console.log('Fetched user info:', response);
+      
+      // 从 response.user 中获取用户信息
+      if (response && response.user) {
+        const userData = {
+          ...response.user,
+          // 使用后端返回的字段名
+          uid: response.user.uid,
+          name: response.user.name,
+          gender: response.user.gender
+        };
+        localStorage.setItem('userInfo', JSON.stringify(userData));
+        setUserInfo(userData);
+      }
+    } catch (error) {
+      console.error('Error fetching user info:', error);
+    }
+  };
+
+  // 修改用户信息更新的处理函数
+  const handleUserUpdate = async (updatedUser) => {
+    try {
+      // 直接使用 uid
+      const userId = updatedUser.uid;
+      console.log('Updating user with ID:', userId);
+      if (!userId) {
+        throw new Error('User ID not found');
+      }
+      await fetchUserInfo(userId);
+    } catch (error) {
+      console.error('Error updating user info:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
@@ -154,9 +193,11 @@ const BookManagement = () => {
               onClick={() => setShowUserModal(true)}
               className="text-blue-600 hover:text-blue-800"
             >
-              {userInfo?.name}
+              {userInfo?.name || userInfo?.Name || '用户'}
             </button>
-            <span className="text-gray-600">{userInfo?.gender}</span>
+            <span className="text-gray-600">
+              {userInfo?.gender || userInfo?.Gender || ''}
+            </span>
           </div>
         </div>
       </header>
@@ -283,7 +324,7 @@ const BookManagement = () => {
         <UserEditModal
           user={userInfo}
           onClose={() => setShowUserModal(false)}
-          onUpdate={(updatedUser) => setUserInfo(updatedUser)}
+          onUpdate={handleUserUpdate}
         />
       )}
 

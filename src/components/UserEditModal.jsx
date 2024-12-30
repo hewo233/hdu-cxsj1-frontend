@@ -2,26 +2,42 @@ import React, { useState } from 'react';
 import axiosInstance from '../utils/axios';
 
 const UserEditModal = ({ user, onClose, onUpdate }) => {
+  console.log('User data in modal:', user);
+
   const [formData, setFormData] = useState({
     name: user.name || '',
     gender: user.gender || '',
-    email: user.email || ''
+    password: ''
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const userId = user.id || user.ID || user.uid;
+      const userId = user.user.uid;
+      console.log('User ID:', userId);
+      
       if (!userId) {
         throw new Error('User ID not found');
       }
 
-      const response = await axiosInstance.put(`/user/${userId}`, formData);
+      const dataToSend = {};
+      Object.keys(formData).forEach(key => {
+        if (formData[key]) {
+          dataToSend[key] = formData[key];
+        }
+      });
+
+      console.log('Data to send:', dataToSend);
+      const response = await axiosInstance.put(`/user/${userId}`, dataToSend);
       
-      if (response.data) {
-        const updatedUser = { ...user, ...formData };
-        localStorage.setItem('userInfo', JSON.stringify(updatedUser));
-        onUpdate(updatedUser);
+      if (response) {
+        onUpdate({
+          ...user,
+          ...dataToSend,
+          password: undefined
+        });
+        
+        alert('更新成功！');
         onClose();
       }
     } catch (error) {
@@ -45,12 +61,13 @@ const UserEditModal = ({ user, onClose, onUpdate }) => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">新密码</label>
+            <label className="block text-sm font-medium text-gray-700">新密码（可选）</label>
             <input
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="留空表示不修改密码"
             />
           </div>
           <div>
