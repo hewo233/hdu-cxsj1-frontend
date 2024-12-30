@@ -102,7 +102,7 @@ const BookManagement = () => {
       return;
     }
     const selectedBookId = Array.from(selectedBooks)[0];
-    const selectedBook = books.find(book => book.id === selectedBookId);
+    const selectedBook = books.find(book => book.bid === selectedBookId);
     if (!selectedBook) {
       alert('找不到选中的图书');
       return;
@@ -119,10 +119,9 @@ const BookManagement = () => {
 
     if (window.confirm(`确定要删除选中的 ${selectedBooks.size} 本书吗？`)) {
       try {
-        // 如果后端支持批量删除
         await Promise.all(
-          Array.from(selectedBooks).map(id =>
-            axiosInstance.delete(`/book/${id}`)
+          Array.from(selectedBooks).map(bid =>
+            axiosInstance.delete(`/book/${bid}`)
           )
         );
         fetchBooks();
