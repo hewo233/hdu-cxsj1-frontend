@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -12,37 +12,35 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    
     try {
       const response = await axios.post('http://localhost:8080/auth/login', formData);
-      console.log('Login response:', response);
-
-      if (response.data && response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        
-        if (response.data.user) {
-          localStorage.setItem('userInfo', JSON.stringify(response.data.user));
-        } 
-        else {
-          const userInfo = {
-            id: response.data.id,
-            name: response.data.name,
-            email: response.data.email,
-            gender: response.data.gender
-          };
-          localStorage.setItem('userInfo', JSON.stringify(userInfo));
-        }
-
-        console.log('Navigating to /books...');
-        navigate('/books');
-      } else {
-        setError('登录失败：服务器响应格式不正确');
-        console.error('Invalid response format:', response.data);
+      console.log('Login successful:', response.data);
+      
+      if (!response.data || !response.data.token || !response.data.user) {
+        throw new Error('Invalid response format');
       }
-    } catch (err) {
-      console.error('Login error:', err);
-      setError(err.response?.data?.message || '登录失败，请检查用户名和密码');
+
+      localStorage.setItem('token', `Bearer ${response.data.token}`);
+      localStorage.setItem('userInfo', JSON.stringify(response.data.user));
+      
+      console.log('Stored token and user info, navigating to /books...');
+      navigate('/books', { replace: true });
+
+    } catch (error) {
+      console.error('Login error:', error);
+      setError(error.response?.data?.message || '登录失败，请检查邮箱和密码');
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    console.log('Current token:', token);
+    if (token) {
+      navigate('/books', { replace: true });
+    }
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

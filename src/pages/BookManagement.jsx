@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../utils/axios';
 import { useNavigate } from 'react-router-dom';
 import UserEditModal from '../components/UserEditModal';
 
@@ -23,18 +23,17 @@ const BookManagement = () => {
       const storedUserInfo = localStorage.getItem('userInfo');
       if (storedUserInfo) {
         const parsedUserInfo = JSON.parse(storedUserInfo);
-        if (parsedUserInfo && typeof parsedUserInfo === 'object') {
-          setUserInfo(parsedUserInfo);
-        } else {
-          localStorage.removeItem('userInfo');
-          localStorage.removeItem('token');
-          navigate('/login');
-        }
+        setUserInfo(parsedUserInfo);
+      } else {
+        // 如果没有用户信息，重新登录
+        localStorage.removeItem('token');
+        navigate('/login');
+        return;
       }
     } catch (error) {
       console.error('Error parsing user info:', error);
-      localStorage.removeItem('userInfo');
       localStorage.removeItem('token');
+      localStorage.removeItem('userInfo');
       navigate('/login');
       return;
     }
@@ -44,10 +43,7 @@ const BookManagement = () => {
 
   const fetchBooks = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8080/book/list', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axiosInstance.get('/book/list');
       setBooks(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching books:', error);
