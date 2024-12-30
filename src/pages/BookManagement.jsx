@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axiosInstance from '../utils/axios';
 import { useNavigate } from 'react-router-dom';
 import UserEditModal from '../components/UserEditModal';
+import BookFormModal from '../components/BookFormModal';
 
 const COVER_BASE_URL = 'http://localhost:8080/static/covers/';
 
@@ -11,6 +12,9 @@ const BookManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [userInfo, setUserInfo] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const booksPerPage = 20;
   const navigate = useNavigate();
 
@@ -88,6 +92,45 @@ const BookManagement = () => {
   const currentBooks = filteredBooks.slice(indexOfFirstBook, indexOfLastBook);
   const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
 
+  // 添加图书
+  const handleAdd = () => {
+    setSelectedBook(null); // 清空选中的书
+    setShowAddModal(true);
+  };
+
+  // 编辑图书
+  const handleEdit = () => {
+    if (!selectedBook) {
+      alert('请先选择要编辑的图书');
+      return;
+    }
+    setShowEditModal(true);
+  };
+
+  // 删除图书
+  const handleDelete = async () => {
+    if (!selectedBook) {
+      alert('请先选择要删除的图书');
+      return;
+    }
+
+    if (window.confirm('确定要删除这本书吗？')) {
+      try {
+        await axiosInstance.delete(`/book/${selectedBook.id}`);
+        fetchBooks(); // 重新获取图书列表
+        setSelectedBook(null);
+      } catch (error) {
+        console.error('Error deleting book:', error);
+        alert('删除失败');
+      }
+    }
+  };
+
+  // 选择图书
+  const handleSelectBook = (book) => {
+    setSelectedBook(selectedBook?.id === book.id ? null : book);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       <header className="bg-white shadow">
@@ -109,9 +152,28 @@ const BookManagement = () => {
         <div className="px-4 py-6 sm:px-0">
           <div className="flex justify-between mb-4">
             <div className="space-x-2">
-              <button className="bg-green-500 text-white px-4 py-2 rounded">添加</button>
-              <button className="bg-blue-500 text-white px-4 py-2 rounded">编辑</button>
-              <button className="bg-red-500 text-white px-4 py-2 rounded">删除</button>
+              <button 
+                onClick={handleAdd}
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+              >
+                添加
+              </button>
+              <button 
+                onClick={handleEdit}
+                className={`bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 ${
+                  !selectedBook ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                编辑
+              </button>
+              <button 
+                onClick={handleDelete}
+                className={`bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 ${
+                  !selectedBook ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                删除
+              </button>
             </div>
             <input
               type="text"
@@ -148,7 +210,13 @@ const BookManagement = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentBooks.map((book) => (
-                  <tr key={book.id}>
+                  <tr 
+                    key={book.id}
+                    onClick={() => handleSelectBook(book)}
+                    className={`cursor-pointer hover:bg-gray-50 ${
+                      selectedBook?.id === book.id ? 'bg-blue-50' : ''
+                    }`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <img 
                         src={`${COVER_BASE_URL}${book.cover_file.split('/').pop()}`}
@@ -188,6 +256,40 @@ const BookManagement = () => {
           user={userInfo}
           onClose={() => setShowUserModal(false)}
           onUpdate={(updatedUser) => setUserInfo(updatedUser)}
+        />
+      )}
+
+      {showAddModal && (
+        <BookFormModal
+          onClose={() => setShowAddModal(false)}
+          onSubmit={async (data) => {
+            try {
+              await axiosInstance.post('/book/add', data);
+              fetchBooks();
+              setShowAddModal(false);
+            } catch (error) {
+              console.error('Error adding book:', error);
+              alert('添加失败');
+            }
+          }}
+        />
+      )}
+
+      {showEditModal && selectedBook && (
+        <BookFormModal
+          book={selectedBook}
+          onClose={() => setShowEditModal(false)}
+          onSubmit={async (data) => {
+            try {
+              await axiosInstance.put(`/book/${selectedBook.id}`, data);
+              fetchBooks();
+              setShowEditModal(false);
+              setSelectedBook(null);
+            } catch (error) {
+              console.error('Error updating book:', error);
+              alert('更新失败');
+            }
+          }}
         />
       )}
     </div>
