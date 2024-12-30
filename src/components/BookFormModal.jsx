@@ -8,7 +8,11 @@ const BookFormModal = ({ book, onClose, onSubmit }) => {
     intro: book?.intro || ''
   });
   const [coverFile, setCoverFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(book?.cover_file ? `http://localhost:8080/static/covers/${book.cover_file.split('/').pop()}` : null);
+  const [previewUrl, setPreviewUrl] = useState(
+    book?.cover_file 
+      ? `http://localhost:8080/static/covers/${book.cover_file.split('/').pop()}`
+      : null
+  );
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -26,10 +30,17 @@ const BookFormModal = ({ book, onClose, onSubmit }) => {
       data.append('cover', coverFile);
     }
     Object.keys(formData).forEach(key => {
-      data.append(key, formData[key]);
+      if (formData[key] !== '') {
+        data.append(key, formData[key]);
+      }
     });
 
-    await onSubmit(data);
+    try {
+      await onSubmit(data);
+    } catch (error) {
+      console.error('Form submission error:', error);
+      alert('保存失败，请重试');
+    }
   };
 
   return (

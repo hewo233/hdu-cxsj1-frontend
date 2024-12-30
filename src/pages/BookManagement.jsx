@@ -12,7 +12,7 @@ const BookManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [userInfo, setUserInfo] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
-  const [selectedBook, setSelectedBook] = useState(null);
+  const [selectedBooks, setSelectedBooks] = useState(new Set());
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const booksPerPage = 20;
@@ -50,11 +50,8 @@ const BookManagement = () => {
   const fetchBooks = async () => {
     try {
       const response = await axiosInstance.get('/book/list');
-      console.log('Books data:', response); // 调试日志
-      console.log('Raw response:', response);
-      
-      // 确保 response 是数组或者从 response 中获取正确的数组字段
       const booksData = Array.isArray(response) ? response : response.books || [];
+      console.log('Book data structure:', booksData[0]); // 打印第一本书的数据结构
       setBooks(booksData);
     } catch (error) {
       console.error('Error fetching books:', error);
@@ -94,14 +91,20 @@ const BookManagement = () => {
 
   // 添加图书
   const handleAdd = () => {
-    setSelectedBook(null); // 清空选中的书
+    setSelectedBooks(new Set());
     setShowAddModal(true);
   };
 
   // 编辑图书
   const handleEdit = () => {
+    if (selectedBooks.size !== 1) {
+      alert('请选择一本要编辑的图书');
+      return;
+    }
+    const selectedBookId = Array.from(selectedBooks)[0];
+    const selectedBook = books.find(book => book.id === selectedBookId);
     if (!selectedBook) {
-      alert('请先选择要编辑的图书');
+      alert('找不到选中的图书');
       return;
     }
     setShowEditModal(true);
@@ -109,26 +112,37 @@ const BookManagement = () => {
 
   // 删除图书
   const handleDelete = async () => {
-    if (!selectedBook) {
+    if (selectedBooks.size === 0) {
       alert('请先选择要删除的图书');
       return;
     }
 
-    if (window.confirm('确定要删除这本书吗？')) {
+    if (window.confirm(`确定要删除选中的 ${selectedBooks.size} 本书吗？`)) {
       try {
-        await axiosInstance.delete(`/book/${selectedBook.id}`);
-        fetchBooks(); // 重新获取图书列表
-        setSelectedBook(null);
+        // 如果后端支持批量删除
+        await Promise.all(
+          Array.from(selectedBooks).map(id =>
+            axiosInstance.delete(`/book/${id}`)
+          )
+        );
+        fetchBooks();
+        setSelectedBooks(new Set());
       } catch (error) {
-        console.error('Error deleting book:', error);
+        console.error('Error deleting books:', error);
         alert('删除失败');
       }
     }
   };
 
   // 选择图书
-  const handleSelectBook = (book) => {
-    setSelectedBook(selectedBook?.id === book.id ? null : book);
+  const handleSelectBook = (bookId) => {
+    console.log('Book ID type:', typeof bookId); // 检查 ID 的类型
+    console.log('Book ID value:', bookId); // 检查 ID 的值
+    if (bookId === undefined || bookId === null) {
+      console.error('Invalid book ID');
+      return;
+    }
+    setSelectedBooks(new Set([bookId]));
   };
 
   return (
@@ -161,16 +175,18 @@ const BookManagement = () => {
               <button 
                 onClick={handleEdit}
                 className={`bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 ${
-                  !selectedBook ? 'opacity-50 cursor-not-allowed' : ''
+                  selectedBooks.size !== 1 ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
+                disabled={selectedBooks.size !== 1}
               >
                 编辑
               </button>
               <button 
                 onClick={handleDelete}
                 className={`bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 ${
-                  !selectedBook ? 'opacity-50 cursor-not-allowed' : ''
+                  selectedBooks.size === 0 ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
+                disabled={selectedBooks.size === 0}
               >
                 删除
               </button>
@@ -188,6 +204,9 @@ const BookManagement = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    选择
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     封面
                   </th>
@@ -211,12 +230,22 @@ const BookManagement = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentBooks.map((book) => (
                   <tr 
-                    key={book.id}
-                    onClick={() => handleSelectBook(book)}
-                    className={`cursor-pointer hover:bg-gray-50 ${
-                      selectedBook?.id === book.id ? 'bg-blue-50' : ''
+                    key={book.bid}
+                    className={`hover:bg-gray-50 ${
+                      selectedBooks.has(book.bid) ? 'bg-blue-50' : ''
                     }`}
                   >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={selectedBooks.has(book.bid)}
+                        onChange={() => {
+                          console.log('Book ID:', book.bid);
+                          handleSelectBook(book.bid);
+                        }}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <img 
                         src={`${COVER_BASE_URL}${book.cover_file.split('/').pop()}`}
@@ -224,7 +253,7 @@ const BookManagement = () => {
                         className="h-20 w-16 object-cover rounded shadow"
                       />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{book.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{book.bid}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{book.name}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{book.author}</td>
                     <td className="px-6 py-4 whitespace-nowrap">{book.publisher}</td>
@@ -275,16 +304,23 @@ const BookManagement = () => {
         />
       )}
 
-      {showEditModal && selectedBook && (
+      {showEditModal && (
         <BookFormModal
-          book={selectedBook}
-          onClose={() => setShowEditModal(false)}
+          book={books.find(book => selectedBooks.has(book.bid))}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedBooks(new Set());
+          }}
           onSubmit={async (data) => {
             try {
-              await axiosInstance.put(`/book/${selectedBook.id}`, data);
-              fetchBooks();
+              await axiosInstance.put(`/book/${Array.from(selectedBooks)[0]}`, data, {
+                headers: {
+                  'Content-Type': 'multipart/form-data',
+                },
+              });
+              await fetchBooks();
               setShowEditModal(false);
-              setSelectedBook(null);
+              setSelectedBooks(new Set());
             } catch (error) {
               console.error('Error updating book:', error);
               alert('更新失败');
