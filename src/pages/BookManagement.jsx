@@ -48,7 +48,7 @@ const BookManagement = () => {
       const response = await axios.get('http://localhost:8080/book/list', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setBooks(response.data || []);
+      setBooks(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching books:', error);
       setBooks([]);
@@ -60,10 +60,12 @@ const BookManagement = () => {
     }
   };
 
-  const filteredBooks = books.filter(book => 
-    book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    book.intro.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredBooks = Array.isArray(books) 
+    ? books.filter(book => 
+      book.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.intro.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    : [];
 
   const indexOfLastBook = currentPage * booksPerPage;
   const indexOfFirstBook = indexOfLastBook - booksPerPage;
